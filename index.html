@@ -30,7 +30,6 @@
             color: #333;
             margin-bottom: 20px;
             text-align: left;
-           
         }
         label {
             display: block;
@@ -46,37 +45,31 @@
             border-radius: 5px;
             font-size: 16px;
             margin-bottom: 15px;
-           
         }
         .input-group {
-        margin-bottom: 20px;
-    }
-
-    .input-group label {
-        display: block;
-        margin-bottom: 5px;
-        font-weight: bold;
-    }
-
-    .input-group input[type="number"],
-    .input-group textarea {
-        width: 100%;
-        padding: 10px;
-        border: 1px solid #ccc;
-        border-radius: 5px;
-        box-sizing: border-box;
-    }
-    .input-pair {
-        display: flex;
-        justify-content: space-between;
-        gap: 20px;
-    }
-
-    .input-pair .input-group {
-        flex: 1;
-    }
-
-
+            margin-bottom: 20px;
+        }
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .input-group input[type="number"],
+        .input-group textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+        .input-pair {
+            display: flex;
+            justify-content: space-between;
+            gap: 20px;
+        }
+        .input-pair .input-group {
+            flex: 1;
+        }
         button {
             width: 100%;
             padding: 12px 20px;
@@ -88,28 +81,19 @@
             cursor: pointer;
             transition: background-color 0.3s ease;
         }
-   
         button:hover {
             background-color: #0056b3;
         }
-   
     </style>
 </head>
 <body>
-
     <div class="container">
-        
-        
         <h1>Language Model Interface</h1>
         <label for="modelSelect">Select model</label>
         <select id="modelSelect">
             <option value="model1">Phi3Mini</option>
             <option value="model2">FuzeChat</option>
-         
-            
         </select>
-    
-
         <div class="input-group">
             <label for="prompt">System prompt</label>
             <textarea id="prompt" rows="2" placeholder="Enter prompt template..."></textarea>
@@ -140,59 +124,52 @@
         </div>
         <button id="talkToModelButton">Save</button>
     </div>
-    
+
     <script>
-        
-        defaultValues();
-        loadSampleText()
+        function setInitialValues() {
+            const promptt = localStorage.getItem("promptt") || "You are a decision engine, based on the user input decide which action to take.";
+            const context = localStorage.getItem("context") || "My name is Tafadzwa Nesara, I stay in Cape Town.";
+            const temp = localStorage.getItem("temp") || "0.95";
+            const topk = localStorage.getItem("topk") || "5";
+            const topp = localStorage.getItem("topp") || "0.95";
+            const maxTokens = localStorage.getItem("maxTokens") || "200";
+
+            document.getElementById("prompt").value = promptt;
+            document.getElementById("context").value = context;
+            document.getElementById("temp").value = temp;
+            document.getElementById("topk").value = topk;
+            document.getElementById("topp").value = topp;
+            document.getElementById("maxTokens").value = maxTokens;
+        }
+
         function loadSampleText() {
-        document.getElementById("talkToModelButton").addEventListener("click", function() {
-            const modelSelect = document.getElementById("modelSelect").value;
-         
-            window.location.href = "chat.html?model=" + modelSelect ;
-            submitData()
-            
+            document.getElementById("talkToModelButton").addEventListener("click", function() {
+                const modelSelect = document.getElementById("modelSelect").value;
+                window.location.href = "chat.html?model=" + modelSelect;
+                submitData();
+            });
+        }
+
+        function submitData() {
+            const promptt = document.getElementById("prompt").value;
+            const context = document.getElementById("context").value;
+            const temp = document.getElementById("temp").value;
+            const topk = document.getElementById("topk").value;
+            const topp = document.getElementById("topp").value;
+            const maxTokens = document.getElementById("maxTokens").value;
+
+            localStorage.setItem("promptt", promptt);
+            localStorage.setItem("context", context);
+            localStorage.setItem("temp", temp);
+            localStorage.setItem("topk", topk);
+            localStorage.setItem("topp", topp);
+            localStorage.setItem("maxTokens", maxTokens);
+        }
+
+        document.addEventListener("DOMContentLoaded", function() {
+            setInitialValues();
+            loadSampleText();
         });
-
-        
-    }
-   
-    function defaultValues(){
-    document.getElementById("prompt").defaultValue = "You are a decision engine, based on the user input decide which action to take.";
-    promptt = document.getElementById("prompt").value;
-    localStorage.setItem("promptt", promptt);
-    document.getElementById("context").defaultValue = "My name is Tafadzwa nesara, I stay in capetown.";
-    context = document.getElementById("context").value;
-    localStorage.setItem("context", context);
-    document.getElementById("temp").defaultValue = "0.95";
-    temp = document.getElementById("temp").value;
-    localStorage.setItem("temp", temp);
-    document.getElementById("topk").defaultValue = "5";
-    topk = document.getElementById("topk").value;
-    localStorage.setItem("topk", topk);
-    document.getElementById("topp").defaultValue = "0.95";
-    topp = document.getElementById("topp").value;
-    localStorage.setItem("topp", topp);
-    document.getElementById("maxTokens").defaultValue = "200";
-    maxTokens = document.getElementById("maxTokens").value;
-    localStorage.setItem("maxTokens", maxTokens);
-    }
-    function submitData(){
-    promptt = document.getElementById("prompt").value;
-    localStorage.setItem("promptt", promptt);
-    context = document.getElementById("context").value;
-    localStorage.setItem("context", context);
-    temp = document.getElementById("temp").value;
-    localStorage.setItem("temp", temp);
-    topk = document.getElementById("topk").value;
-    localStorage.setItem("topk", topk);
-    topp = document.getElementById("topp").value;
-    localStorage.setItem("topp", topp);
-    maxTokens = document.getElementById("maxTokens").value;
-    localStorage.setItem("maxTokens", maxTokens);
-
-    }
-
     </script>
 </body>
 </html>
