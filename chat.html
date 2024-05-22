@@ -130,6 +130,7 @@
     <div class="main-container">
         <div class="side-panel" id="sidePanel">
             <h2>Message History</h2>
+           
             <!-- Message history will be added here -->
         </div>
         <div class="chat-container" id="chatContainer">
@@ -146,31 +147,38 @@
             <div id="messageInputContainer">
                 <textarea id="messageInput" rows="2" placeholder="Enter is send key..."></textarea>
                 <div class="button-container">
-                    <button id="clearChat">Clear</button>
-                    <button id="newChat">Save</button>
+                    <button id="clearChat">Clear chat</button>
+                    <button id="newChat">Save chat</button>
+                    <button id="clearHistory">Clear history</button>
                 </div>
             </div>
         </div>
     </div>
     <script>
         document.getElementById('settingsButton').addEventListener('click', function() {
+            
             window.location.href = 'index.html';
         });
 
         document.getElementById("messageInput").addEventListener("keydown", function(event) {
             if (event.key === "Enter" && !event.shiftKey) {
-                event.preventDefault();
+                //event.preventDefault();
                 startChat();
             }
         });
 
         document.getElementById("newChat").addEventListener("click", function() {
-            resetChat();
+            populateHistory();
         });
 
         document.getElementById("clearChat").addEventListener("click", function() {
             clearChat();
         });
+
+        document.getElementById("clearHistory").addEventListener("click", function() {
+            clearHistory();
+        });
+
 
         let messages = [];
         let messagesHistory = [];
@@ -180,19 +188,34 @@
             const savedMessages = localStorage.getItem("messages");
             const savedHistory = localStorage.getItem("messagesHistory");
             const selectedModel = localStorage.getItem("selectedModel");
+            const savedSidePanelState = localStorage.getItem("sidePanelState");
 
             if (savedMessages) {
                 messages = JSON.parse(savedMessages);
                 displayMessages(messages);
+                //populateHistory();
             }
 
             if (savedHistory) {
                 messagesHistory = JSON.parse(savedHistory);
+                 
             }
 
             if (selectedModel) {
                 document.getElementById("modelSelect").value = selectedModel;
             }
+
+            if (savedSidePanelState) {
+                document.getElementById("sidePanel").innerHTML = savedSidePanelState;  // Restore the state of the side panel
+                // Re-attach event listeners to restored elements
+                document.querySelectorAll('#sidePanel div[data-key]').forEach(div => {
+                div.addEventListener('click', () => {
+                const key = div.getAttribute('data-key');
+                console.log(`Clicked modelHistoryDiv with key: ${key}`);
+                loadMessageHistory(null, historyarray[key]);
+            });
+        });
+    }
         }
 
         async function startChat() {
@@ -219,8 +242,9 @@
                 summary: "",
                 context: context,
                 history: messagesHistory
+                
             });
-
+            console.log(messagesHistory);
             try {
                 const response = await fetch("http://192.165.134.27:15606/api/generate", {
                     method: "POST",
@@ -249,7 +273,7 @@
 
             document.getElementById("messageInput").value = "";
         }
-
+//clears chat area
         function clearChat() {
             const conversationPanel = document.getElementById("conversationPanel");
             conversationPanel.innerHTML = "";
@@ -259,6 +283,15 @@
             localStorage.removeItem("messagesHistory");
         }
 
+        function clearHistory() {
+            const historyPanel = document.getElementById("sidePanel");
+            historyPanel.innerHTML = "";
+            
+            messagesHistory = [];
+            localStorage.removeItem("savedSidePanelState");
+            localStorage.removeItem("messagesHistory");
+        }
+//displays messages as the chat runs
         function displayMessage(message, isReceived) {
             const conversationPanel = document.getElementById("conversationPanel");
             const messageDiv = document.createElement("div");
@@ -272,10 +305,11 @@
             messageDiv.appendChild(messageContentDiv);
             conversationPanel.appendChild(messageDiv);
         }
-
+//loads messages in the conversation panel from the history panel
         function displayMessages(messages) {
             const conversationPanel = document.getElementById("conversationPanel");
             conversationPanel.innerHTML = "";
+            console.log("here", messagesHistory);
             messages.forEach(msg => {
                 const messageDiv = document.createElement("div");
                 messageDiv.classList.add("message", msg.type);
@@ -289,14 +323,23 @@
                 conversationPanel.appendChild(messageDiv);
             });
         }
-
-        function resetChat() {
+        let counter= 0;
+        let historyarray={};
+//populates the history panel
+        function populateHistory() {
             const modelSelect = document.getElementById("modelSelect").value;
             const sidePanel = document.getElementById("sidePanel");
             const modelMessages = messages.filter(msg => msg.model === modelSelect);
+            
+            const uniqueKey = counter++;
+            historyarray[uniqueKey] = messagesHistory;
+            
 
+            const keyDiv= document.createElement("div");
+            keyDiv.value=uniqueKey;
             const modelHistoryDiv = document.createElement("div");
             modelHistoryDiv.innerHTML = `<h3>${modelSelect}</h3>`;
+            modelHistoryDiv.setAttribute('data-key', uniqueKey); //setting data-key attribute for correct history retrieval
             modelMessages.forEach(msg => {
                 const messageDiv = document.createElement("div");
                 messageDiv.classList.add("message", msg.type);
@@ -305,22 +348,29 @@
                 nameDiv.textContent = msg.type === "received" ? "AI" : "You";
                 const messageContentDiv = document.createElement("div");
                 messageContentDiv.textContent = msg.message;
+                messageDiv.appendChild(nameDiv);
+                messageDiv.appendChild(messageContentDiv);
                 modelHistoryDiv.appendChild(messageDiv);
             });
 
             modelHistoryDiv.addEventListener('click', () => {
-                loadMessageHistory(modelSelect, modelMessages);
+                const key = modelHistoryDiv.getAttribute('data-key');  // Retrieve the unique key
+                console.log(`Clicked modelHistoryDiv with key: ${key}`);  // Log or use the key as needed
+                loadMessageHistory(modelSelect, modelMessages,key);
+                  
             });
 
             sidePanel.appendChild(modelHistoryDiv);
 
-            const conversationPanel = document.getElementById("conversationPanel");
-            conversationPanel.innerHTML = "";
-            messages = [];
-            messagesHistory = [];
+            localStorage.setItem("messagesHistory", JSON.stringify(messagesHistory));
+            localStorage.setItem("sidePanelState", sidePanel.innerHTML);
         }
 
-        function loadMessageHistory(model, messages) {
+//loads saved messages into conversationpanel
+        function loadMessageHistory(model, messages,key) {
+            
+            console.log("we are here",historyarray[key]);
+            messagesHistory=historyarray[key] 
             const conversationPanel = document.getElementById("conversationPanel");
             conversationPanel.innerHTML = "";
             messages.forEach(msg => {
@@ -338,11 +388,11 @@
 
             document.getElementById("modelSelect").value = model;
         }
-
+// uses phi3 if value is preacher else it uses fuzechat
         function getModelName(value) {
             return value === 'Preacher' ? "Phi3Mini" : "FuzeChat";
         }
-
+// returns system propmpt based on the character
         function getSystemPrompt(value) {
             const systemPrompts = {
                 'Preacher': "You are a highly respected preacher (name: Aatos preacher) known for your profound wisdom, deep compassion, and eloquent oratory skills. Your primary role is to guide, inspire, and comfort your congregation through your sermons and teachings. You possess a vast knowledge of religious texts, history, and philosophy, which you use to convey messages of hope, morality, and faith. You are empathetic and approachable, always ready to listen and provide counsel to those in need. Your words are carefully chosen to uplift spirits, provide clarity, and foster a sense of community and spiritual growth When crafting your responses, consider the following characteristics:Wisdom and Knowledge: You have a deep understanding of religious doctrines, scriptures, and ethical principles. Your insights are thoughtful, well-reasoned, and reflective of your extensive study and contemplation.Compassion and Empathy: You genuinely care about the well-being of others. Your words are gentle, understanding, and aimed at providing comfort and support.Inspirational and Motivational: Your sermons are designed to inspire and motivate individuals to lead lives of virtue and purpose. You use parables, stories, and analogies to make your messages relatable and impactful.Eloquence and Clarity: Your speech is clear, articulate, and persuasive. You have a talent for explaining complex ideas in a way that is accessible and engaging to all.Community and Fellowship: You emphasize the importance of community, encouraging collaboration, support, and unity among your congregation. You foster an environment of mutual respect and care.Guidance and Counsel: You provide practical advice and spiritual guidance to those seeking direction in their lives. Your counsel is based on principles of kindness, integrity, and wisdom.Example scenarios where you might be asked to provide input:Offering words of comfort to someone experiencing loss or hardship.Delivering a motivational speech to encourage positive action and personal growth.Explaining a complex theological concept in simple, relatable terms.Providing ethical guidance on a moral dilemma.Encouraging community members to support and uplift each other.",
