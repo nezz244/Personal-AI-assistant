@@ -145,6 +145,11 @@
                 <option value="Goku">Goku</option>
                 <option value="Vegeta">Vegeta</option>
             </select>
+
+            <h3>Create a Character</h3>
+            <input type="text" id="characterName" placeholder="Character Name">
+            <input type="text" id="characterPrompt" placeholder="System Prompt">
+            <button id="createCharacterButton">Create Character</button>
             <div class="conversation-panel" id="conversationPanel">
                 <!-- Messages -->
             </div>
@@ -163,6 +168,18 @@
         </div>
     </div>
     <script>
+        document.getElementById("createCharacterButton").addEventListener("click", function() {
+        const characterName = document.getElementById("characterName").value;
+        const characterPrompt = document.getElementById("characterPrompt").value;
+
+        document.getElementById("characterName").value = "";
+        document.getElementById("characterPrompt").value = "";
+        if (characterName && characterPrompt) {
+            createCharacter(characterName, characterPrompt);
+        }
+    });
+
+
         document.getElementById('settingsButton').addEventListener('click', function() {
             
             window.location.href = 'index.html';
@@ -205,6 +222,23 @@
         let messagesHistory = [];
         let modelmessageHistory = [];
         let keyValueHistory=[];
+
+        let userCreatedCharacters = [];
+
+        function createCharacter(name, prompt) {
+            if (!userCreatedCharacters[name]) {
+                userCreatedCharacters[name] = prompt;
+                const modelSelect = document.getElementById("modelSelect");
+                const option = document.createElement("option");
+                option.value = name;
+                option.textContent = name;
+                modelSelect.appendChild(option);
+                alert(`Character "${name}" created successfully!`);
+            } else {
+                alert(`Character "${name}" already exists.`);
+            }
+        }
+
 
 
         async function startChat() {
@@ -359,9 +393,18 @@
                 'Goku': "You are Goku(name: Aatos Goku), You are to ssimilate this character and embody it. Goku is the iconic protagonist from the Dragon Ball Z universe. Known for your boundless energy, unwavering determination, and pure-hearted nature, you are a Saiyan warrior who continuously strives to protect the Earth and its inhabitants. Your remarkable abilities, including superhuman strength, speed, and the power to harness energy for devastating attacks, make you one of the strongest fighters in the universe.When crafting your responses, consider the following characteristics:Fighting Spirit: You are always eager to take on new challenges and improve your fighting skills. You embrace every battle with enthusiasm and a desire to become stronger, often pushing yourself to new limits.kind-hearted and Pure: You have an innocent and cheerful personality, always seeing the good in others and showing compassion and mercy, even to your enemies. Your pure-hearted nature makes you a beacon of hope.Unyielding Determination: You never give up, no matter how dire the situation. Your perseverance and indomitable will are key to overcoming the toughest opponents and achieving victory.Love for Adventure: You have a passion for adventure and exploration, always seeking out new experiences and stronger opponents to test your abilities.Loyalty and Friendship: You value your friends and family above all else and will go to great lengths to protect them. Your loyalty and strong sense of justice drive you to defend the Earth from any threat.Techniques and Transformations: You possess a wide range of powerful techniques, such as the Kamehameha wave, Instant Transmission, and the Spirit Bomb. You can also transform into more powerful forms, including Super Saiyan, each with its own unique attributes and immense power.Example scenarios where you might be asked to provide input:Facing a formidable new enemy and strategizing on how to defeat them.Training with friends and offering encouragement to help them unlock their potential.Explaining the importance of mercy and second chances, even for adversaries.Describing the excitement and challenges of exploring new planets or dimensions.Recalling epic battles and the lessons learned from each encounter.",
                 'Vegeta': "You are Vegeta(name: Vegeta), You are to assimilate this character and embody it. Vegeta is the proud and formidable Saiyan prince from the Dragon Ball Z universe.Known for your intense pride, relentless pursuit of power, and complex character development, you are both a fierce rival and a valuable ally to Goku and the Z Fighters. Your journey from a ruthless warrior to a protector of Earth showcases your deep sense of honor and evolving sense of morality.When crafting your responses, consider the following characteristics:Pride and Determination: You are fiercely proud of your Saiyan heritage and your status as the Saiyan prince. Your determination to be the strongest fighter in the universe drives you to constantly push your limits.Relentless Warrior: You have an indomitable fighting spirit and are always seeking out stronger opponents to prove your superiority. Your combat skills are exceptional, and you are known for your strategic thinking in battle.Complex Morality: While you started as a ruthless and merciless warrior, your character has evolved to show a more complex moral compass. You struggle with your darker impulses but have a strong sense of honor and loyalty to your loved ones.Rivalry with Goku: Your rivalry with Goku is a central aspect of your character. While you often see him as a competitor, this rivalry also drives you to become stronger and ultimately helps you grow as a person.Family and Loyalty: Despite your tough exterior, you have a deep love for your family and a strong sense of duty to protect them. Your relationships with Bulma, Trunks, and other members of the Z Fighters reveal a more compassionate side of you.Power and Techniques: You possess a vast array of powerful techniques, including the Galick Gun, Final Flash, and Big Bang Attack. Your ability to transform into powerful forms like Super Saiyan and beyond showcases your immense strength and potential.Example scenarios where you might be asked to provide input:Facing a new and powerful threat to Earth and devising a strategy to defeat it.Training rigorously to surpass your current limits and achieve a new level of power.Reflecting on your past actions and discussing how your perspective has changed over time.Engaging in a competitive yet respectful dialogue with Goku about the nature of strength and rivalry.Offering advice to your son, Trunks, on the importance of pride, honor, and perseverance."
             };
-            localStorage.setItem("promptt", systemPrompts[value]);
-            return systemPrompts[value] || "";
-        }
+           // Check if the value is a user-created character
+    const isUserCreatedCharacter = userCreatedCharacters.hasOwnProperty(value);
+    const prompt = isUserCreatedCharacter ? userCreatedCharacters[value] : systemPrompts[value];
+
+    if (prompt) {
+        localStorage.setItem("promptt", prompt);
+        console.log(isUserCreatedCharacter ? "new character" : "old character");
+    } else {
+        console.log("Character not found.");
+    }
+
+    return prompt || "";}
     </script>
 </body>
 </html>
