@@ -62,15 +62,22 @@
             border-radius: 5px;
         }
         .message.sent {
-            background-color: #007bff;
-            color: #fff;
-            align-self: flex-end;
-        }
-        .message.received {
-            background-color: #f0f0f0;
-            color: #333;
-            align-self: flex-start;
-        }
+        background-color: #007bff ;
+        color: #333;
+        align-self: flex-start;
+        margin-right: auto;
+        border-bottom-left-radius: 0;
+        max-width: 70%;
+       
+    }
+    .message.received {
+        background-color: #f0f0f0;
+        color: #333;
+        align-self: flex-end;
+        margin-left: auto;
+        border-bottom-right-radius: 0;
+        max-width: 70%;
+    }
         .name {
             font-weight: bold;
             margin-bottom: 5px;
@@ -94,10 +101,12 @@
         #messageInputContainer {
             display: flex;
             align-items: center;
+            flex-direction: column;
             justify-content: center;
             padding: 10px;
             background-color: #fff;
             border-radius: 15px;
+            gap: 10px;
         }
         .settings-button {
             position: absolute;
@@ -110,9 +119,9 @@
         }
         .button-container {
             display: flex;
-            flex-direction: column;
-            gap: 5px;
-            width: 100px;
+            flex-direction: row;
+            gap: 10px;
+            width: 100%;
         }
         .button-container button {
             padding: 10px;
@@ -128,11 +137,6 @@
 <body>
     <button class="settings-button" id="settingsButton">&#9881;</button>
     <div class="main-container">
-        <div class="side-panel" id="sidePanel">
-            <h2>Message History</h2>
-           
-            <!-- Message history will be added here -->
-        </div>
         <div class="chat-container" id="chatContainer">
             <label for="modelSelect">You are speaking with:</label>
             <select id="modelSelect">
@@ -145,10 +149,14 @@
                 <!-- Messages -->
             </div>
             <div id="messageInputContainer">
-                <textarea id="messageInput" rows="2" placeholder="Enter is send key..."></textarea>
+                <div style="display: flex; align-items: center; width: 100%; position: relative;">
+                    <input type="text" id="messageInput" style="width: 100%; padding-right: 40px;" rows="1" placeholder="Enter message...">
+                    <button id="sendButton" style="position: absolute; right: 10px; background: none; border: none; cursor: pointer;">
+                        <img src="send-icon.png" alt="Send" style="width: 24px; height: 24px;">
+                    </button>
+                </div>
                 <div class="button-container">
-                    <button id="clearChat">Clear chat</button>
-                    <button id="newChat">Save chat</button>
+                    <button  id="clearChat">Clear chat</button>
                     <button id="clearHistory">Clear history</button>
                 </div>
             </div>
@@ -162,14 +170,15 @@
 
         document.getElementById("messageInput").addEventListener("keydown", function(event) {
             if (event.key === "Enter" && !event.shiftKey) {
-                //event.preventDefault();
                 startChat();
             }
         });
-
-        document.getElementById("newChat").addEventListener("click", function() {
-            populateHistory();
-        });
+        document.getElementById("sendButton").addEventListener("click", function(event) {
+           
+                startChat();
+            });   
+      
+      
 
         document.getElementById("clearChat").addEventListener("click", function() {
             clearChat();
@@ -179,44 +188,24 @@
             clearHistory();
         });
 
+        document.getElementById("modelSelect").addEventListener("change", function() {
+            
+            const selectedModel = document.getElementById("modelSelect").value;
+           // localStorage.setItem("modelName",selectedModel);
+            const modelMessages = modelmessageHistory[selectedModel] || [];
+            
+            history=  keyValueHistory[selectedModel] || [];
+            console.log("selected character",document.getElementById("modelSelect").value);
+            
+            displayMessages(modelMessages,history);
+        });
+
 
         let messages = [];
         let messagesHistory = [];
+        let modelmessageHistory = [];
+        let keyValueHistory=[];
 
-        // Load saved chat and parameters from localStorage
-        window.onload = function() {
-            const savedMessages = localStorage.getItem("messages");
-            const savedHistory = localStorage.getItem("messagesHistory");
-            const selectedModel = localStorage.getItem("selectedModel");
-            const savedSidePanelState = localStorage.getItem("sidePanelState");
-
-            if (savedMessages) {
-                messages = JSON.parse(savedMessages);
-                displayMessages(messages);
-                //populateHistory();
-            }
-
-            if (savedHistory) {
-                messagesHistory = JSON.parse(savedHistory);
-                 
-            }
-
-            if (selectedModel) {
-                document.getElementById("modelSelect").value = selectedModel;
-            }
-
-            if (savedSidePanelState) {
-                document.getElementById("sidePanel").innerHTML = savedSidePanelState;  // Restore the state of the side panel
-                // Re-attach event listeners to restored elements
-                document.querySelectorAll('#sidePanel div[data-key]').forEach(div => {
-                div.addEventListener('click', () => {
-                const key = div.getAttribute('data-key');
-                console.log(`Clicked modelHistoryDiv with key: ${key}`);
-                loadMessageHistory(null, historyarray[key]);
-            });
-        });
-    }
-        }
 
         async function startChat() {
             const userInput = document.getElementById("messageInput").value;
@@ -241,7 +230,7 @@
                 },
                 summary: "",
                 context: context,
-                history: messagesHistory
+                history: []
                 
             });
             console.log(messagesHistory);
@@ -258,10 +247,25 @@
                 const result = await response.json();
                 displayMessage(userInput, false);
                 displayMessage(result.output, true);
+                
+
+                if (!modelmessageHistory[document.getElementById("modelSelect").value]) {
+                modelmessageHistory[document.getElementById("modelSelect").value] = [];
+            }      
+
+            if (!keyValueHistory[document.getElementById("modelSelect").value]) {
+                keyValueHistory[document.getElementById("modelSelect").value] = [];
+            }      
+
+
 
                 messagesHistory.push({ "Human": userInput, "Ai": result.output });
                 messages.push({ model: modelSelect.value, message: userInput, type: "sent" });
                 messages.push({ model: modelSelect.value, message: result.output, type: "received" });
+
+                keyValueHistory[document.getElementById("modelSelect").value].push({ "Human": userInput, "Ai": result.output });
+                modelmessageHistory[document.getElementById("modelSelect").value].push({ model: modelSelect.value, message: userInput, type: "sent" });
+                modelmessageHistory[document.getElementById("modelSelect").value].push({ model: modelSelect.value, message: result.output, type: "received" });
 
                 // Save messages to localStorage
                 localStorage.setItem("messages", JSON.stringify(messages));
@@ -306,9 +310,10 @@
             conversationPanel.appendChild(messageDiv);
         }
 //loads messages in the conversation panel from the history panel
-        function displayMessages(messages) {
+        function displayMessages(messages, history) {
             const conversationPanel = document.getElementById("conversationPanel");
             conversationPanel.innerHTML = "";
+            //localStorage.setItem("messagesHistory",history)
             console.log("here", messagesHistory);
             messages.forEach(msg => {
                 const messageDiv = document.createElement("div");
@@ -323,71 +328,25 @@
                 conversationPanel.appendChild(messageDiv);
             });
         }
-        let counter= 0;
-        let historyarray={};
-//populates the history panel
-        function populateHistory() {
-            const modelSelect = document.getElementById("modelSelect").value;
-            const sidePanel = document.getElementById("sidePanel");
-            const modelMessages = messages.filter(msg => msg.model === modelSelect);
-            
-            const uniqueKey = counter++;
-            historyarray[uniqueKey] = messagesHistory;
-            
+        function loadChatState() {
+            const savedModelSelect = localStorage.getItem("modelSelect");
+            if (savedModelSelect) {
+                document.getElementById("modelSelect").value = savedModelSelect;
+            }
 
-            const keyDiv= document.createElement("div");
-            keyDiv.value=uniqueKey;
-            const modelHistoryDiv = document.createElement("div");
-            modelHistoryDiv.innerHTML = `<h3>${modelSelect}</h3>`;
-            modelHistoryDiv.setAttribute('data-key', uniqueKey); //setting data-key attribute for correct history retrieval
-            modelMessages.forEach(msg => {
-                const messageDiv = document.createElement("div");
-                messageDiv.classList.add("message", msg.type);
-                const nameDiv = document.createElement("div");
-                nameDiv.classList.add("name");
-                nameDiv.textContent = msg.type === "received" ? "AI" : "You";
-                const messageContentDiv = document.createElement("div");
-                messageContentDiv.textContent = msg.message;
-                messageDiv.appendChild(nameDiv);
-                messageDiv.appendChild(messageContentDiv);
-                modelHistoryDiv.appendChild(messageDiv);
-            });
+            const savedMessages = localStorage.getItem("messages");
+            if (savedMessages) {
+                messages = JSON.parse(savedMessages);
+                displayMessages(messages, messagesHistory);
+            }
 
-            modelHistoryDiv.addEventListener('click', () => {
-                const key = modelHistoryDiv.getAttribute('data-key');  // Retrieve the unique key
-                console.log(`Clicked modelHistoryDiv with key: ${key}`);  // Log or use the key as needed
-                loadMessageHistory(modelSelect, modelMessages,key);
-                  
-            });
-
-            sidePanel.appendChild(modelHistoryDiv);
-
-            localStorage.setItem("messagesHistory", JSON.stringify(messagesHistory));
-            localStorage.setItem("sidePanelState", sidePanel.innerHTML);
+            const savedMessagesHistory = localStorage.getItem("messagesHistory");
+            if (savedMessagesHistory) {
+                messagesHistory = JSON.parse(savedMessagesHistory);
+            }
         }
 
-//loads saved messages into conversationpanel
-        function loadMessageHistory(model, messages,key) {
-            
-            console.log("we are here",historyarray[key]);
-            messagesHistory=historyarray[key] 
-            const conversationPanel = document.getElementById("conversationPanel");
-            conversationPanel.innerHTML = "";
-            messages.forEach(msg => {
-                const messageDiv = document.createElement("div");
-                messageDiv.classList.add("message", msg.type);
-                const nameDiv = document.createElement("div");
-                nameDiv.classList.add("name");
-                nameDiv.textContent = msg.type === "received" ? "AI" : "You";
-                const messageContentDiv = document.createElement("div");
-                messageContentDiv.textContent = msg.message;
-                messageDiv.appendChild(nameDiv);
-                messageDiv.appendChild(messageContentDiv);
-                conversationPanel.appendChild(messageDiv);
-            });
 
-            document.getElementById("modelSelect").value = model;
-        }
 // uses phi3 if value is preacher else it uses fuzechat
         function getModelName(value) {
             return value === 'Preacher' ? "Phi3Mini" : "FuzeChat";
