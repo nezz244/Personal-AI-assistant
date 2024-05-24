@@ -19,15 +19,7 @@
             display: flex;
             gap: 20px;
         }
-        .side-panel {
-            width: 200px;
-            height: 680px;
-            background-color: #fff;
-            border-radius: 15px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            padding: 20px;
-            overflow-y: auto;
-        }
+
         .chat-container {
             width: 400px;
             height: 680px;
@@ -132,6 +124,54 @@
             cursor: pointer;
             width: 100%;
         }
+        #characterFormContainer {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        #characterForm {
+            background: #fff;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        .dropdown-container {
+            position: relative;
+            display: inline-block;
+        }
+
+        .dropdown-container select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 15px;
+            font-size: 16px;
+            margin-bottom: 15px;
+        }
+
+        .dropdown-container button {
+            position: absolute;
+            right: 0;
+            top: 0%;
+            height: 40px;
+            padding: 10px;
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            border-top-right-radius: 15px;
+            border-bottom-right-radius: 15px;
+            cursor: pointer;
+        }
+
+
+        
     </style>
 </head>
 <body>
@@ -139,17 +179,25 @@
     <div class="main-container">
         <div class="chat-container" id="chatContainer">
             <label for="modelSelect">You are speaking with:</label>
-            <select id="modelSelect">
-                <option value="Preacher">Preacher</option>
-                <option value="Car mechanic">Car mechanic</option>
-                <option value="Goku">Goku</option>
-                <option value="Vegeta">Vegeta</option>
-            </select>
+            <div class="dropdown-container">
+                <select id="modelSelect">
+                    <option value="Preacher">Preacher</option>
+                    <option value="Car mechanic">Car mechanic</option>
+                    <option value="Goku">Goku</option>
+                    <option value="Vegeta">Vegeta</option>
+                </select>
+                <button id="newCharacterButton">New Character</button>
+            </div>
+            
+            <div id="characterFormContainer">
+                <div id="characterForm">
+                    <h3>Create a Character</h3>
+                    <input type="text" id="characterName"  style="border-radius: 15px;" placeholder="Character Name">
+                    <input type="text" id="characterPrompt" style="border-radius: 15px;" placeholder="System Prompt">
+                    <button id="createCharacterButton" style="border-radius: 15px;  background-color: #007bff;">Create Character</button>
+                </div>
+            </div>
 
-            <h3>Create a Character</h3>
-            <input type="text" id="characterName" placeholder="Character Name">
-            <input type="text" id="characterPrompt" placeholder="System Prompt">
-            <button id="createCharacterButton">Create Character</button>
             <div class="conversation-panel" id="conversationPanel">
                 <!-- Messages -->
             </div>
@@ -168,6 +216,11 @@
         </div>
     </div>
     <script>
+
+        document.getElementById("newCharacterButton").addEventListener("click", function() {
+            document.getElementById("characterFormContainer").style.display = "flex";
+        });
+
         document.getElementById("createCharacterButton").addEventListener("click", function() {
         const characterName = document.getElementById("characterName").value;
         const characterPrompt = document.getElementById("characterPrompt").value;
@@ -176,6 +229,7 @@
         document.getElementById("characterPrompt").value = "";
         if (characterName && characterPrompt) {
             createCharacter(characterName, characterPrompt);
+            document.getElementById("characterFormContainer").style.display = "none";
         }
     });
 
@@ -317,17 +371,21 @@
             conversationPanel.innerHTML = "";
             messages = [];
             messagesHistory = [];
+            
             localStorage.removeItem("messages");
             localStorage.removeItem("messagesHistory");
+            
         }
 
         function clearHistory() {
             const historyPanel = document.getElementById("sidePanel");
-            historyPanel.innerHTML = "";
             
+            conversationPanel.innerHTML = "";
             messagesHistory = [];
-            localStorage.removeItem("savedSidePanelState");
+            modelmessageHistory = [];
+         
             localStorage.removeItem("messagesHistory");
+            localStorage.removeItem("modelmessageHistory");
         }
 //displays messages as the chat runs
         function displayMessage(message, isReceived) {
