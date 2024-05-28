@@ -19,7 +19,6 @@
             display: flex;
             gap: 20px;
         }
-
         .chat-container {
             width: 400px;
             height: 680px;
@@ -41,13 +40,14 @@
             padding: 20px;
             margin-bottom: 10px;
         }
-        select, textarea {
-            width: 95%;
+        select, textarea, input {
+            width: 500px;
             padding: 10px;
             border: 1px solid #ccc;
             border-radius: 15px;
             font-size: 16px;
-            margin-bottom: 15px;
+            
+            align-items: center;
         }
         .message {
             padding: 10px;
@@ -61,16 +61,15 @@
         margin-right: auto;
         border-bottom-left-radius: 0;
         max-width: 70%;
-       
-    }
-    .message.received {
-        background-color: #f0f0f0;
-        color: #333;
-        align-self: flex-end;
-        margin-left: auto;
-        border-bottom-right-radius: 0;
-        max-width: 70%;
-    }
+        }
+        .message.received {
+            background-color: #f0f0f0;
+            color: #333;
+            align-self: flex-end;
+            margin-left: auto;
+            border-bottom-right-radius: 0;
+            max-width: 70%;
+        }
         .name {
             font-weight: bold;
             margin-bottom: 5px;
@@ -124,6 +123,7 @@
             border-radius: 15px;
             cursor: pointer;
             width: 100%;
+            justify-content: center;
         }
         #characterFormContainer {
             display: none;
@@ -144,14 +144,14 @@
             display: flex;
             flex-direction: column;
             gap: 10px;
-            
-            
+        }
+        #characterForm h3 {
+            margin-bottom: 0px; /* Reduces the gap between the header and the input */
         }
         .dropdown-container {
             position: relative;
             display: inline-block;
         }
-
         .dropdown-container select {
             width: 100%;
             padding: 10px;
@@ -160,10 +160,7 @@
             font-size: 16px;
             margin-bottom: 15px;
         }
-
         .dropdown-container button {
-
-            
             position: absolute;
             right: 0;
             top: 0%;
@@ -195,9 +192,9 @@
             <div id="characterFormContainer">
                 <div id="characterForm">
                     <h3>Create a Character</h3>
-                    <input type="text" id="characterName" style="text-indent: 2%; height: 30px; border: 1px solid #ccc; border-radius: 15px; width: 90%; padding-right: 40px;" rows="1" placeholder="Enter name...">
-                    <textarea id="characterPrompt" gap="100px" name="description" rows="4" cols="50" placeholder="Enter system prompt "></textarea>
-                    <textarea id="characterFactSheet" name="facts" rows="4" cols="50" placeholder="Enter character facts "></textarea>
+                    <input type="text" id="characterName" placeholder="Enter name...">
+                    <textarea id="characterPrompt" name="description" rows="4" placeholder="Enter system prompt"></textarea>
+                    <textarea id="characterFactSheet" name="facts" rows="4" placeholder="Enter character facts"></textarea>                    
                     <div class="button-container">
                         <button  id="cancelButton">Cancel</button>
                         <button  id="createCharacterButton">Create character</button>
@@ -207,12 +204,12 @@
             <div class="conversation-panel" id="conversationPanel">
                 <!-- Messages -->
             </div>
-                <div style="display: flex; align-items: center; width: 412px; position: relative;">
-                    <input type="text" id="messageInput" style="width: 100%; padding-right: 40px;" rows="1" placeholder="Enter message...">
-                    <button id="sendButton" style="position: absolute; right: 10px; background: none; border: none; cursor: pointer;">
-                        <img src="send-icon.png" alt="Send" style="width: 24px; height: 24px;">
-                    </button>
-                </div>
+            <div style="display: flex; align-items: center; width: 412px; position: relative;">
+                <input type="text" id="messageInput" style="width: 100%; padding-right: 40px;" rows="1" placeholder="Enter message...">
+                <button id="sendButton" style="position: absolute; right: 10px; background: none; border: none; cursor: pointer;">
+                    <img src="send-icon.png" alt="Send" style="width: 24px; height: 24px;">
+                </button>
+            </div>
                 <div class="button-container">
                     <button  id="clearChat">Clear chat</button>
                     <button id="clearHistory">Clear history</button>
@@ -220,39 +217,18 @@
         </div>
     </div>
     <script>
-    
-
-        document.addEventListener("DOMContentLoaded", function() {
-        const urlParams = new URLSearchParams(window.location.search);
-        const model = urlParams.get("model");
-        const messages = urlParams.get("messages");
-        const modelMessageHistory = urlParams.get("modelMessageHistory");
-        const keyValueHistory = urlParams.get("keyValueHistory");
-
-        // Store retrieved values in localStorage for later use
-        localStorage.setItem("model", model);
-        localStorage.setItem("messages", messages);
-        localStorage.setItem("modelMessageHistory", modelMessageHistory);
-        localStorage.setItem("keyValueHistory", keyValueHistory);
-
-        // Now you can use these values to populate your chat interface or perform other operations
-        });
-
-          // Add an event listener to the back arrow button to exit the characterFormContainer
           document.getElementById("cancelButton").addEventListener("click", () => {
             characterFormContainer.style.display = "none";
         });
         document.getElementById("newCharacterButton").addEventListener("click", function() {
             document.getElementById("characterFormContainer").style.display = "flex";
         });
-
         document.getElementById("createCharacterButton").addEventListener("click", function() {
         const characterName = document.getElementById("characterName").value;
         const characterPrompt = document.getElementById("characterPrompt").value;
         const characterFacts = document.getElementById("characterFactSheet").value;
         document.getElementById("characterPrompt").value = "";
         document.getElementById("characterFactSheet").value = "";
-
 
         if (characterName && characterPrompt && characterFacts) {
             createCharacter(characterName, characterPrompt, characterFacts);
@@ -275,8 +251,6 @@
            
                 startChat();
             });   
-      
-      
 
         document.getElementById("clearChat").addEventListener("click", function() {
             clearChat();
@@ -296,17 +270,12 @@
             console.log("selected character",document.getElementById("modelSelect").value);
             
             displayMessages(modelMessages,history);
-        });
-
-    
-        
-
-
+        })
         let messages = [];
-   
         let modelmessageHistory = []; //stores history of selected model in key value pair in format required by my front end
         let keyValueHistory=[]; //stores history of selected model in key value pair in the format required by the api backend
         let userCreatedCharacters=[];
+
         function createCharacter(name, prompt, facts) {
             if (!userCreatedCharacters[name]) {
                 localStorage.setItem("context",facts);
@@ -398,7 +367,6 @@
 
             document.getElementById("messageInput").value = "";
         }
-//clears chat area
 
         function scrollToBottom() {
             const conversationPanel = document.querySelector('.conversation-panel');
@@ -408,20 +376,13 @@
             const conversationPanel = document.getElementById("conversationPanel");
             conversationPanel.innerHTML = "";
             messages = [];
-            
-            
             localStorage.removeItem("messages");
-            
-            
         }
 
         function clearHistory() {
             const historyPanel = document.getElementById("sidePanel");
-            
             conversationPanel.innerHTML = "";
-           
             modelmessageHistory = [];
-         
             localStorage.removeItem("modelmessageHistory");
         }
             //displays messages as the chat runs
@@ -443,7 +404,6 @@
         function displayMessages(messages, history) {
             const conversationPanel = document.getElementById("conversationPanel");
             conversationPanel.innerHTML = "";
-            
             messages.forEach(msg => {
                 const messageDiv = document.createElement("div");
                 messageDiv.classList.add("message", msg.type);
