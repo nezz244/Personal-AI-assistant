@@ -23,6 +23,7 @@
         .chat-container {
             width: 400px;
             height: 680px;
+            gap: 10px;
             background-color: #fff;
             border-radius: 15px;
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
@@ -41,7 +42,7 @@
             margin-bottom: 10px;
         }
         select, textarea {
-            width: 100%;
+            width: 95%;
             padding: 10px;
             border: 1px solid #ccc;
             border-radius: 15px;
@@ -140,7 +141,11 @@
             background: #fff;
             padding: 20px;
             border-radius: 15px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            
+            
         }
         .dropdown-container {
             position: relative;
@@ -157,6 +162,8 @@
         }
 
         .dropdown-container button {
+
+            
             position: absolute;
             right: 0;
             top: 0%;
@@ -169,9 +176,6 @@
             border-bottom-right-radius: 15px;
             cursor: pointer;
         }
-
-
-        
     </style>
 </head>
 <body>
@@ -188,21 +192,22 @@
                 </select>
                 <button id="newCharacterButton">New Character</button>
             </div>
-            
             <div id="characterFormContainer">
                 <div id="characterForm">
                     <h3>Create a Character</h3>
-                    <input type="text" id="characterName"  style="border-radius: 15px;" placeholder="Character Name">
-                    <input type="text" id="characterPrompt" style="border-radius: 15px;" placeholder="System Prompt">
-                    <button id="createCharacterButton" style="border-radius: 15px;  background-color: #007bff;">Create Character</button>
+                    <input type="text" id="characterName" style="text-indent: 2%; height: 30px; border: 1px solid #ccc; border-radius: 15px; width: 90%; padding-right: 40px;" rows="1" placeholder="Enter name...">
+                    <textarea id="characterPrompt" gap="100px" name="description" rows="4" cols="50" placeholder="Enter system prompt "></textarea>
+                    <textarea id="characterFactSheet" name="facts" rows="4" cols="50" placeholder="Enter character facts "></textarea>
+                    <div class="button-container">
+                        <button  id="cancelButton">Cancel</button>
+                        <button  id="createCharacterButton">Create character</button>
+                    </div>
                 </div>
             </div>
-
             <div class="conversation-panel" id="conversationPanel">
                 <!-- Messages -->
             </div>
-            <div id="messageInputContainer">
-                <div style="display: flex; align-items: center; width: 100%; position: relative;">
+                <div style="display: flex; align-items: center; width: 412px; position: relative;">
                     <input type="text" id="messageInput" style="width: 100%; padding-right: 40px;" rows="1" placeholder="Enter message...">
                     <button id="sendButton" style="position: absolute; right: 10px; background: none; border: none; cursor: pointer;">
                         <img src="send-icon.png" alt="Send" style="width: 24px; height: 24px;">
@@ -212,11 +217,31 @@
                     <button  id="clearChat">Clear chat</button>
                     <button id="clearHistory">Clear history</button>
                 </div>
-            </div>
         </div>
     </div>
     <script>
+    
 
+        document.addEventListener("DOMContentLoaded", function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const model = urlParams.get("model");
+        const messages = urlParams.get("messages");
+        const modelMessageHistory = urlParams.get("modelMessageHistory");
+        const keyValueHistory = urlParams.get("keyValueHistory");
+
+        // Store retrieved values in localStorage for later use
+        localStorage.setItem("model", model);
+        localStorage.setItem("messages", messages);
+        localStorage.setItem("modelMessageHistory", modelMessageHistory);
+        localStorage.setItem("keyValueHistory", keyValueHistory);
+
+        // Now you can use these values to populate your chat interface or perform other operations
+        });
+
+          // Add an event listener to the back arrow button to exit the characterFormContainer
+          document.getElementById("cancelButton").addEventListener("click", () => {
+            characterFormContainer.style.display = "none";
+        });
         document.getElementById("newCharacterButton").addEventListener("click", function() {
             document.getElementById("characterFormContainer").style.display = "flex";
         });
@@ -224,14 +249,16 @@
         document.getElementById("createCharacterButton").addEventListener("click", function() {
         const characterName = document.getElementById("characterName").value;
         const characterPrompt = document.getElementById("characterPrompt").value;
-
-        document.getElementById("characterName").value = "";
+        const characterFacts = document.getElementById("characterFactSheet").value;
         document.getElementById("characterPrompt").value = "";
-        if (characterName && characterPrompt) {
-            createCharacter(characterName, characterPrompt);
+        document.getElementById("characterFactSheet").value = "";
+
+
+        if (characterName && characterPrompt && characterFacts) {
+            createCharacter(characterName, characterPrompt, characterFacts);
             document.getElementById("characterFormContainer").style.display = "none";
         }
-    });
+         });
 
 
         document.getElementById('settingsButton').addEventListener('click', function() {
@@ -271,30 +298,35 @@
             displayMessages(modelMessages,history);
         });
 
+    
+        
+
 
         let messages = [];
-        let messagesHistory = [];
-        let modelmessageHistory = [];
-        let keyValueHistory=[];
-
-        let userCreatedCharacters = [];
-
-        function createCharacter(name, prompt) {
+   
+        let modelmessageHistory = []; //stores history of selected model in key value pair in format required by my front end
+        let keyValueHistory=[]; //stores history of selected model in key value pair in the format required by the api backend
+        let userCreatedCharacters=[];
+        function createCharacter(name, prompt, facts) {
             if (!userCreatedCharacters[name]) {
+                localStorage.setItem("context",facts);
+                console.log("facts", facts);
+                
                 userCreatedCharacters[name] = prompt;
                 const modelSelect = document.getElementById("modelSelect");
                 const option = document.createElement("option");
                 option.value = name;
                 option.textContent = name;
                 modelSelect.appendChild(option);
+                modelSelect.value = name;
+                modelSelect.dispatchEvent(new Event('change'));
+
+    
                 alert(`Character "${name}" created successfully!`);
             } else {
                 alert(`Character "${name}" already exists.`);
             }
         }
-
-
-
         async function startChat() {
             const userInput = document.getElementById("messageInput").value;
             const modelName = getModelName(document.getElementById("modelSelect").value);
@@ -315,13 +347,15 @@
                     topP: parseInt(topp),
                     maxTokens: parseInt(maxTokens),
                     systemPrompt: systemPrompt,
+                    stop: [
+                            "Human:",
+                            "Ai"
+                        ]
                 },
                 summary: "",
                 context: context,
-                history: []
-                
+                history: keyValueHistory[document.getElementById("modelSelect").value]
             });
-            console.log(messagesHistory);
             try {
                 const response = await fetch("http://192.165.134.27:15606/api/generate", {
                     method: "POST",
@@ -338,27 +372,26 @@
                 
 
                 if (!modelmessageHistory[document.getElementById("modelSelect").value]) {
-                modelmessageHistory[document.getElementById("modelSelect").value] = [];
-            }      
+                    modelmessageHistory[document.getElementById("modelSelect").value] = [];
+                }      
 
-            if (!keyValueHistory[document.getElementById("modelSelect").value]) {
-                keyValueHistory[document.getElementById("modelSelect").value] = [];
-            }      
+                if (!keyValueHistory[document.getElementById("modelSelect").value]) {
+                    keyValueHistory[document.getElementById("modelSelect").value] = [];
+                }      
+                
+              
 
-
-
-                messagesHistory.push({ "Human": userInput, "Ai": result.output });
+               
                 messages.push({ model: modelSelect.value, message: userInput, type: "sent" });
                 messages.push({ model: modelSelect.value, message: result.output, type: "received" });
-
                 keyValueHistory[document.getElementById("modelSelect").value].push({ "Human": userInput, "Ai": result.output });
+                //stores the messages in keyvalue pair so that when user changes character the chosen character history is loaded
                 modelmessageHistory[document.getElementById("modelSelect").value].push({ model: modelSelect.value, message: userInput, type: "sent" });
                 modelmessageHistory[document.getElementById("modelSelect").value].push({ model: modelSelect.value, message: result.output, type: "received" });
-
                 // Save messages to localStorage
                 localStorage.setItem("messages", JSON.stringify(messages));
-                localStorage.setItem("messagesHistory", JSON.stringify(messagesHistory));
-
+               
+               
             } catch (error) {
                 console.error('Error:', error);
             }
@@ -366,14 +399,19 @@
             document.getElementById("messageInput").value = "";
         }
 //clears chat area
+
+        function scrollToBottom() {
+            const conversationPanel = document.querySelector('.conversation-panel');
+            conversationPanel.scrollTop = conversationPanel.scrollHeight;
+        }
         function clearChat() {
             const conversationPanel = document.getElementById("conversationPanel");
             conversationPanel.innerHTML = "";
             messages = [];
-            messagesHistory = [];
+            
             
             localStorage.removeItem("messages");
-            localStorage.removeItem("messagesHistory");
+            
             
         }
 
@@ -381,69 +419,51 @@
             const historyPanel = document.getElementById("sidePanel");
             
             conversationPanel.innerHTML = "";
-            messagesHistory = [];
+           
             modelmessageHistory = [];
          
-            localStorage.removeItem("messagesHistory");
             localStorage.removeItem("modelmessageHistory");
         }
-//displays messages as the chat runs
+            //displays messages as the chat runs
         function displayMessage(message, isReceived) {
             const conversationPanel = document.getElementById("conversationPanel");
             const messageDiv = document.createElement("div");
             messageDiv.classList.add("message", isReceived ? "received" : "sent");
             const nameDiv = document.createElement("div");
             nameDiv.classList.add("name");
-            nameDiv.textContent = isReceived ? "AI" : "You";
+            nameDiv.textContent = isReceived ? document.getElementById("modelSelect").value : "You";
             const messageContentDiv = document.createElement("div");
             messageContentDiv.textContent = message;
             messageDiv.appendChild(nameDiv);
             messageDiv.appendChild(messageContentDiv);
             conversationPanel.appendChild(messageDiv);
+            scrollToBottom();
         }
-//loads messages in the conversation panel from the history panel
+            //loads messages in the conversation panel if the character changes
         function displayMessages(messages, history) {
             const conversationPanel = document.getElementById("conversationPanel");
             conversationPanel.innerHTML = "";
-            //localStorage.setItem("messagesHistory",history)
-            console.log("here", messagesHistory);
+            
             messages.forEach(msg => {
                 const messageDiv = document.createElement("div");
                 messageDiv.classList.add("message", msg.type);
                 const nameDiv = document.createElement("div");
                 nameDiv.classList.add("name");
-                nameDiv.textContent = msg.type === "received" ? "AI" : "You";
+                nameDiv.textContent = msg.type === "received" ? document.getElementById("modelSelect").value : "You";
                 const messageContentDiv = document.createElement("div");
                 messageContentDiv.textContent = msg.message;
                 messageDiv.appendChild(nameDiv);
                 messageDiv.appendChild(messageContentDiv);
                 conversationPanel.appendChild(messageDiv);
+                scrollToBottom();
             });
         }
-        function loadChatState() {
-            const savedModelSelect = localStorage.getItem("modelSelect");
-            if (savedModelSelect) {
-                document.getElementById("modelSelect").value = savedModelSelect;
-            }
 
-            const savedMessages = localStorage.getItem("messages");
-            if (savedMessages) {
-                messages = JSON.parse(savedMessages);
-                displayMessages(messages, messagesHistory);
-            }
-
-            const savedMessagesHistory = localStorage.getItem("messagesHistory");
-            if (savedMessagesHistory) {
-                messagesHistory = JSON.parse(savedMessagesHistory);
-            }
-        }
-
-
-// uses phi3 if value is preacher else it uses fuzechat
+        // uses phi3 if value is preacher else it uses fuzechat
         function getModelName(value) {
             return value === 'Preacher' ? "Phi3Mini" : "FuzeChat";
         }
-// returns system propmpt based on the character
+        // returns system propmpt based on the character
         function getSystemPrompt(value) {
             const systemPrompts = {
                 'Preacher': "You are a highly respected preacher (name: Aatos preacher) known for your profound wisdom, deep compassion, and eloquent oratory skills. Your primary role is to guide, inspire, and comfort your congregation through your sermons and teachings. You possess a vast knowledge of religious texts, history, and philosophy, which you use to convey messages of hope, morality, and faith. You are empathetic and approachable, always ready to listen and provide counsel to those in need. Your words are carefully chosen to uplift spirits, provide clarity, and foster a sense of community and spiritual growth When crafting your responses, consider the following characteristics:Wisdom and Knowledge: You have a deep understanding of religious doctrines, scriptures, and ethical principles. Your insights are thoughtful, well-reasoned, and reflective of your extensive study and contemplation.Compassion and Empathy: You genuinely care about the well-being of others. Your words are gentle, understanding, and aimed at providing comfort and support.Inspirational and Motivational: Your sermons are designed to inspire and motivate individuals to lead lives of virtue and purpose. You use parables, stories, and analogies to make your messages relatable and impactful.Eloquence and Clarity: Your speech is clear, articulate, and persuasive. You have a talent for explaining complex ideas in a way that is accessible and engaging to all.Community and Fellowship: You emphasize the importance of community, encouraging collaboration, support, and unity among your congregation. You foster an environment of mutual respect and care.Guidance and Counsel: You provide practical advice and spiritual guidance to those seeking direction in their lives. Your counsel is based on principles of kindness, integrity, and wisdom.Example scenarios where you might be asked to provide input:Offering words of comfort to someone experiencing loss or hardship.Delivering a motivational speech to encourage positive action and personal growth.Explaining a complex theological concept in simple, relatable terms.Providing ethical guidance on a moral dilemma.Encouraging community members to support and uplift each other.",
@@ -452,17 +472,18 @@
                 'Vegeta': "You are Vegeta(name: Vegeta), You are to assimilate this character and embody it. Vegeta is the proud and formidable Saiyan prince from the Dragon Ball Z universe.Known for your intense pride, relentless pursuit of power, and complex character development, you are both a fierce rival and a valuable ally to Goku and the Z Fighters. Your journey from a ruthless warrior to a protector of Earth showcases your deep sense of honor and evolving sense of morality.When crafting your responses, consider the following characteristics:Pride and Determination: You are fiercely proud of your Saiyan heritage and your status as the Saiyan prince. Your determination to be the strongest fighter in the universe drives you to constantly push your limits.Relentless Warrior: You have an indomitable fighting spirit and are always seeking out stronger opponents to prove your superiority. Your combat skills are exceptional, and you are known for your strategic thinking in battle.Complex Morality: While you started as a ruthless and merciless warrior, your character has evolved to show a more complex moral compass. You struggle with your darker impulses but have a strong sense of honor and loyalty to your loved ones.Rivalry with Goku: Your rivalry with Goku is a central aspect of your character. While you often see him as a competitor, this rivalry also drives you to become stronger and ultimately helps you grow as a person.Family and Loyalty: Despite your tough exterior, you have a deep love for your family and a strong sense of duty to protect them. Your relationships with Bulma, Trunks, and other members of the Z Fighters reveal a more compassionate side of you.Power and Techniques: You possess a vast array of powerful techniques, including the Galick Gun, Final Flash, and Big Bang Attack. Your ability to transform into powerful forms like Super Saiyan and beyond showcases your immense strength and potential.Example scenarios where you might be asked to provide input:Facing a new and powerful threat to Earth and devising a strategy to defeat it.Training rigorously to surpass your current limits and achieve a new level of power.Reflecting on your past actions and discussing how your perspective has changed over time.Engaging in a competitive yet respectful dialogue with Goku about the nature of strength and rivalry.Offering advice to your son, Trunks, on the importance of pride, honor, and perseverance."
             };
            // Check if the value is a user-created character
-    const isUserCreatedCharacter = userCreatedCharacters.hasOwnProperty(value);
-    const prompt = isUserCreatedCharacter ? userCreatedCharacters[value] : systemPrompts[value];
+            const isUserCreatedCharacter = userCreatedCharacters.hasOwnProperty(value);
+            const prompt = isUserCreatedCharacter ? userCreatedCharacters[value] : systemPrompts[value];
 
-    if (prompt) {
-        localStorage.setItem("promptt", prompt);
-        console.log(isUserCreatedCharacter ? "new character" : "old character");
-    } else {
-        console.log("Character not found.");
-    }
+            if (prompt) {
+                localStorage.setItem("promptt", prompt);
+                console.log(isUserCreatedCharacter ? "new character" : "old character");
+            } else {
+                console.log("Character not found.");
+            }
 
-    return prompt || "";}
+            return prompt || "";
+        }
     </script>
 </body>
 </html>

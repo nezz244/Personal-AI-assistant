@@ -89,6 +89,14 @@
 <body>
     <div class="container">
         <h1>Language Model Interface</h1>
+        <label for="modelSelect">You are speaking with:</label>
+        <select id="modelSelect">
+            <option value="Preacher">Preacher</option>
+            <option value="Car mechanic">Car mechanic</option>
+            <option value="Goku">Goku</option>
+            <option value="Vegeta">Vegeta</option>
+        </select>
+
         <label for="modelSelect">Select model</label>
         <select id="modelSelect">
             <option value="model1">Phi3Mini</option>
@@ -128,7 +136,7 @@
     <script>
         function setInitialValues() {
             const promptt = localStorage.getItem("promptt") || "You are a decision engine, based on the user input decide which action to take.";
-            const context = localStorage.getItem("context") || "My name is Tafadzwa Nesara, I stay in Cape Town.";
+            const context = localStorage.getItem("context") || "";
             const temp = localStorage.getItem("temp") || "0.95";
             const topk = localStorage.getItem("topk") || "5";
             const topp = localStorage.getItem("topp") || "0.95";
@@ -142,13 +150,24 @@
             document.getElementById("maxTokens").value = maxTokens;
         }
 
+
         function loadSampleText() {
-            document.getElementById("talkToModelButton").addEventListener("click", function() {
-                const modelSelect = document.getElementById("modelSelect").value;
-                window.location.href = "chat.html?model=" + modelSelect;
-                submitData();
+        document.getElementById("talkToModelButton").addEventListener("click", function() {
+            const modelSelect = document.getElementById("modelSelect").value;
+            const messages = localStorage.getItem("messages");
+            const modelMessageHistory = localStorage.getItem("modelMessageHistory");
+            const keyValueHistory = localStorage.getItem("keyValueHistory");
+
+            const queryParams = new URLSearchParams({
+                model: modelSelect,
+                messages: messages,
+                modelMessageHistory: modelMessageHistory,
+                keyValueHistory: keyValueHistory
             });
-        }
+
+            window.location.href = "chat.html?" + queryParams.toString();
+        });
+          }
 
         function submitData() {
             const promptt = document.getElementById("prompt").value;
@@ -164,6 +183,13 @@
             localStorage.setItem("topk", topk);
             localStorage.setItem("topp", topp);
             localStorage.setItem("maxTokens", maxTokens);
+            console.log(localStorage.getItem("messages"))
+            
+            localStorage.setItem("messages", localStorage.getItem("messages"));
+            localStorage.setItem("modelmessageHistory", localStorage.getItem("modelmessageHistory"));
+            localStorage.setItem("keyValueHistory", localStorage.getItem("keyValueHistory"));
+            localStorage.setItem("userCreatedCharacters", localStorage.getItem("userCreatedCharacters"));
+        
         }
 
         document.addEventListener("DOMContentLoaded", function() {
