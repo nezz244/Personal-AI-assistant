@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RAG Testing</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f2f5;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h1 {
+            color: #333;
+        }
+
+        #buttonContainer {
+            margin: 20px;
+        }
+
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        #queryContainer {
+        display: block;
+        font-size: 16px;
+        color: #555;
+        margin-bottom: 8px;
+        font-weight: bold;
+        }
+   
+        #queryInput {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 16px;
+            margin-right: 0px;
+            width: 630px;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.4);
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background-color: white;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 300px;
+        }
+
+        .modal-content h2 {
+            margin-top: 0;
+        }
+
+        label, input, textarea {
+            display: block;
+            width: 93%;
+            margin-bottom: 10px;
+        }
+
+        input, textarea {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        textarea#resultArea {
+            width: 41%;
+            height: 400px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Added box shadow */
+            font-size: 16px; /* Modern font size */
+            resize: vertical; /* Allow vertical resizing */
+        }
+       
+
+        label  {
+            display: block;
+            font-size: 16px;
+            color: #555;
+            margin-bottom: 8px;
+            font-weight: bold;
+            margin-left: 51%;
+        }
+        select, textarea {
+            width: 42.5%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 16px;
+            margin-bottom: 15px;
+        }
+        .input-group {
+            margin-bottom: 20px;
+        }
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .input-group input[type="number"],
+        .input-group textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+        .input-pair {
+            display: flex;
+            justify-content: space-between;
+            gap: 20px;
+        }
+        .input-pair .input-group {
+            flex: 1;
+        }
+    </style>
+</head>
+<body>
+    <h1>Welcome to RAG</h1>
+    <label for="modelSelect">Choose character to edit </label>
+        <select id="modelSelect">
+            <option value="Preacher">Preacher</option>
+            <option value="Mechanic">Mechanic</option>
+            <option value="Goku">Goku</option>
+            <option value="Vegeta">Vegeta</option>
+        </select>
+        <label for="operationSelect">Choose operation</label>
+        <select id="operationSelect">
+            <option value="Add document">Add document</option>
+            <option value="Get documents">Get documents</option>
+            <option value="Import document">Import document</option>
+            <option value="Delete document">Delete document</option>
+        </select>
+        <label>Enter query </label>
+    <div id="queryContainer">
+        
+        <input type="text" id="queryInput" placeholder="Enter query">
+        <button onclick="runQueryRag()">Query RAG</button>
+    </div>
+    <textarea id="resultArea" rows="50" cols="100" readonly></textarea>
+    <div id="addDocumentModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('addDocumentModal')">&times;</span>
+            <h2>Add Document</h2>
+            <label for="addId">ID:</label>
+            <input type="text" id="addId" name="id" placeholder="Enter ID"><br>
+            <label for="addDocument">Document:</label>
+            <textarea id="addDocument" name="document" placeholder="Enter Document"></textarea><br>
+            <button type="button" onclick="addDocument()">Submit</button>
+        </div>
+    </div>
+
+    <div id="getDocumentsModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('getDocumentsModal')">&times;</span>
+            <h2>Get Documents</h2>
+        
+            <button type="button" onclick="getDocuments()">Submit</button>
+        </div>
+    </div>
+
+    <div id="importDocumentModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('importDocumentModal')">&times;</span>
+            <h2>Import Document</h2>
+            <label for="siteUrl">Site URL:</label>
+            <input type="text" id="siteUrl" name="siteUrl" placeholder="Enter Site URL"><br>
+            <label for="title">Title:</label>
+            <input type="text" id="title" name="title" placeholder="Enter Title"><br>
+            <label for="metadata">Metadata:</label>
+            <textarea id="metadata" name="metadata" placeholder="Enter Metadata"></textarea><br>
+            <button type="button" onclick="importDocument()">Submit</button>
+        </div>
+    </div>
+
+    <div id="deleteDocumentModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('deleteDocumentModal')">&times;</span>
+            <h2>Delete Document</h2>
+            <label for="filter">Filter:</label>
+            <input type="text" id="filter" name="filter" placeholder="Enter Filter"><br>
+            <button type="button" onclick="deleteDocument()">Submit</button>
+        </div>
+    </div>
+
+    <script>
+  
+        document.getElementById("operationSelect").addEventListener("change", function() {
+            const selectedOperation = document.getElementById("modelSelect").value;
+
+            if (selectedOperation == 'Add document'){
+                var collectionName = document.getElementById("modelSelect").value ;
+                //showModal('addDocumentModal')
+                const url = `http://192.165.134.27:15435/api/collections/${collectionName}/query`;
+                addDocument(url);
+                
+            } 
+            else if (selectedOperation == 'Get documents') {
+                var collectionName = document.getElementById("modelSelect").value ;
+                //showModal('getDocumentModal')
+                const url = `http://192.165.134.27:15435/api/collections/${collectionName}/query`;
+                getDocuments(url);
+            } 
+            else if (selectedOperation == 'Import document') {
+                var collectionName = document.getElementById("modelSelect").value ;
+                //showModal('importDocumentModal')
+                const url = `http://192.165.134.27:15435/api/collections/${collectionName}/query`;
+                importDocument(url);
+                
+            }
+            else {
+                var collectionName = document.getElementById("modelSelect").value ;
+              //  showModal('deleteDocumentModal')
+                const url = `http://192.165.134.27:15435/api/collections/${collectionName}/query`;
+                deleteDocument(url)
+            }
+        
+            
+        })
+
+        
+
+        function showModal(modalId) {
+            document.getElementById(modalId).style.display = "flex";
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = "none";
+        }
+
+        async function queryRag(query) {
+            const requestPayload = JSON.stringify({
+                query: query,
+                include: ["document", "metadata", "id", "distance"], 
+                count: 1
+            });
+            var collectionName = document.getElementById("modelSelect").value ;
+            const url = `http://192.165.134.27:15435/api/collections/${collectionName}/query`;
+            console.log("url",url);
+            try {
+                const response = await fetch(url, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": "Bearer ABCDEF"
+                    },
+                    body: requestPayload,
+                });
+
+                const result = await response.json();
+                console.log("we are here", result.documents);
+
+                const resultArea = document.getElementById('resultArea');
+                resultArea.value = JSON.stringify(result.documents, null, 2);
+               
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        function runQueryRag() {
+            const queryInput = document.getElementById('queryInput').value;
+            queryRag(queryInput);
+        }
+
+        async function addDocument(url) {
+            const requestPayload = JSON.stringify({
+
+
+                documents: [
+                {
+                    id: document.getElementById('addId').value, 
+                    document: document.getElementById('addDocument').value,
+                    metadata: { "systemPrompt": true}
+                }    
+       		  ],
+
+
+              
+            });
+
+            try {
+                const response = await fetch(url, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": "Bearer ABCDEF"
+                    },
+                    body: requestPayload,
+                });
+
+                const result = await response.json();
+                console.log("we are here", result.documents);
+
+                const resultArea = document.getElementById('resultArea');
+                resultArea.value = JSON.stringify(result.documents, null, 2);
+               
+            } catch (error) {
+                console.error('Error:', error);
+            }
+           
+        }
+
+        async function getDocuments(url) {
+            const requestPayload = JSON.stringify({
+
+                });
+
+                try {
+                const response = await fetch(url, {
+                    method: "GET",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": "Bearer ABCDEF"
+                    },
+                  //  body: requestPayload,
+                });
+
+                const result = await response.json();
+                console.log("we are here", result.documents);
+
+                const resultArea = document.getElementById('resultArea');
+                resultArea.value = JSON.stringify(result.documents, null, 2);
+
+                } catch (error) {
+                console.error('Error:', error);
+                }
+
+                
+
+           
+        }
+
+        async function importDocument(url) {
+            const requestPayload = JSON.stringify({
+                
+                url: document.getElementById("siteUrl").value,
+                title: document.getElementById("title").value,
+                metadatas: [{documentType: "", country: "South Africa"}],
+                chunking: {type: "textSplitter", params: {"separator": "\n",  "chunk_size": 3000, "chunk_overlap": 100}}
+
+            });
+
+            try {
+                const response = await fetch(url, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": "Bearer ABCDEF"
+                    },
+                    body: requestPayload,
+                });
+
+                const result = await response.json();
+                console.log("we are here", result.documents);
+
+                const resultArea = document.getElementById('resultArea');
+                resultArea.value = JSON.stringify(result.documents, null, 2);
+               
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+           
+        
+        async function deleteDocument(url) {
+            
+            const requestPayload = JSON.stringify({
+                
+                filter: {where: {id: document.getElementById("filter")}}
+
+            });
+
+            try {
+                const response = await fetch(url, {
+                    method: "DELETE",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": "Bearer ABCDEF"
+                    },
+                    body: requestPayload,
+                });
+
+                const result = await response.json();
+                console.log("we are here", result.documents);
+
+                const resultArea = document.getElementById('resultArea');
+                resultArea.value = JSON.stringify(result.documents, null, 2);
+               
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        queryRag("constitution"); 
+    </script>
+</body>
+</html>
