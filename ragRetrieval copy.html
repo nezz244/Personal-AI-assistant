@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RAG Testing</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f2f5;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h1 {
+            color: #333;
+        }
+
+        #buttonContainer {
+            margin: 20px;
+        }
+
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        #queryContainer {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        #queryInput {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 16px;
+            margin-right: 10px;
+            width: 300px;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.4);
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background-color: white;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 300px;
+        }
+
+        .modal-content h2 {
+            margin-top: 0;
+        }
+
+        label, input, textarea {
+            display: block;
+            width: 93%;
+            margin-bottom: 10px;
+        }
+
+        input, textarea {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        textarea#resultArea {
+            width: 80%;
+            height: 200px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>RAG Testing</h1>
+
+    <div id="buttonContainer">
+        <button onclick="showModal('addDocumentModal')">Add Document</button>
+        <button onclick="showModal('getDocumentsModal')">Get Documents</button>
+        <button onclick="showModal('importDocumentModal')">Import Document</button>
+        <button onclick="showModal('deleteDocumentModal')">Delete Document</button>
+    </div>
+
+    <div id="queryContainer">
+        <input type="text" id="queryInput" placeholder="Enter query">
+        <button onclick="runQueryRag()">Query RAG</button>
+    </div>
+
+    <div id="addDocumentModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('addDocumentModal')">&times;</span>
+            <h2>Add Document</h2>
+            <label for="addId">ID:</label>
+            <input type="text" id="addId" name="id" placeholder="Enter ID"><br>
+            <label for="addDocument">Document:</label>
+            <textarea id="addDocument" name="document" placeholder="Enter Document"></textarea><br>
+            <button type="button" onclick="addDocument()">Submit</button>
+        </div>
+    </div>
+
+    <div id="getDocumentsModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('getDocumentsModal')">&times;</span>
+            <h2>Get Documents</h2>
+        
+            <button type="button" onclick="getDocuments()">Submit</button>
+        </div>
+    </div>
+
+    <div id="importDocumentModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('importDocumentModal')">&times;</span>
+            <h2>Import Document</h2>
+            <label for="siteUrl">Site URL:</label>
+            <input type="text" id="siteUrl" name="siteUrl" placeholder="Enter Site URL"><br>
+            <label for="title">Title:</label>
+            <input type="text" id="title" name="title" placeholder="Enter Title"><br>
+            <label for="metadata">Metadata:</label>
+            <textarea id="metadata" name="metadata" placeholder="Enter Metadata"></textarea><br>
+            <button type="button" onclick="importDocument()">Submit</button>
+        </div>
+    </div>
+
+    <div id="deleteDocumentModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('deleteDocumentModal')">&times;</span>
+            <h2>Delete Document</h2>
+            <label for="filter">Filter:</label>
+            <input type="text" id="filter" name="filter" placeholder="Enter Filter"><br>
+            <button type="button" onclick="deleteDocument()">Submit</button>
+        </div>
+    </div>
+
+    <textarea id="resultArea" rows="20" cols="100" readonly></textarea>
+
+    <script>
+        function showModal(modalId) {
+            document.getElementById(modalId).style.display = "flex";
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = "none";
+        }
+
+        async function queryRag(query) {
+            const requestPayload = JSON.stringify({
+                query: query,
+                include: ["document", "metadata", "id", "distance"], 
+                count: 1
+            });
+
+            try {
+                const response = await fetch("http://192.165.134.27:15435/api/collections/aatos/query", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": "Bearer ABCDEF"
+                    },
+                    body: requestPayload,
+                });
+
+                const result = await response.json();
+                console.log("we are here", result.documents);
+
+                const resultArea = document.getElementById('resultArea');
+                resultArea.value = JSON.stringify(result.documents, null, 2);
+               
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        function runQueryRag() {
+            const queryInput = document.getElementById('queryInput').value;
+            queryRag(queryInput);
+        }
+
+        async function addDocument() {
+            const requestPayload = JSON.stringify({
+
+
+                documents: [
+                {
+                    id: document.getElementById('addId').value, 
+                    document: document.getElementById('addDocument').value,
+                    metadata: { "systemPrompt": true}
+                }    
+       		  ],
+
+
+              
+            });
+
+            try {
+                const response = await fetch("http://192.165.134.27:15435/api/collections/aatos/documents", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": "Bearer ABCDEF"
+                    },
+                    body: requestPayload,
+                });
+
+                const result = await response.json();
+                console.log("we are here", result.documents);
+
+                const resultArea = document.getElementById('resultArea');
+                resultArea.value = JSON.stringify(result.documents, null, 2);
+               
+            } catch (error) {
+                console.error('Error:', error);
+            }
+           
+        }
+
+        async function getDocuments() {
+            const requestPayload = JSON.stringify({
+
+                });
+
+                try {
+                const response = await fetch("http://192.165.134.27:15435/api/collections/aatos/documents", {
+                    method: "GET",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": "Bearer ABCDEF"
+                    },
+                  //  body: requestPayload,
+                });
+
+                const result = await response.json();
+                console.log("we are here", result.documents);
+
+                const resultArea = document.getElementById('resultArea');
+                resultArea.value = JSON.stringify(result.documents, null, 2);
+
+                } catch (error) {
+                console.error('Error:', error);
+                }
+
+                
+
+           
+        }
+
+        async function importDocument() {
+            const requestPayload = JSON.stringify({
+                
+                url: document.getElementById("siteUrl").value,
+                title: document.getElementById("title").value,
+                metadatas: [{documentType: "", country: "South Africa"}],
+                chunking: {type: "textSplitter", params: {"separator": "\n",  "chunk_size": 3000, "chunk_overlap": 100}}
+
+            });
+
+            try {
+                const response = await fetch("http://192.165.134.27:15435/api/collections/aatos/documents/import", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": "Bearer ABCDEF"
+                    },
+                    body: requestPayload,
+                });
+
+                const result = await response.json();
+                console.log("we are here", result.documents);
+
+                const resultArea = document.getElementById('resultArea');
+                resultArea.value = JSON.stringify(result.documents, null, 2);
+               
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+           
+        
+        async function deleteDocument() {
+            
+            const requestPayload = JSON.stringify({
+                
+                filter: {where: {id: document.getElementById("filter")}}
+
+            });
+
+            try {
+                const response = await fetch("http://192.165.134.27:15435/api/collections/aatos/documents/import", {
+                    method: "DELETE",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": "Bearer ABCDEF"
+                    },
+                    body: requestPayload,
+                });
+
+                const result = await response.json();
+                console.log("we are here", result.documents);
+
+                const resultArea = document.getElementById('resultArea');
+                resultArea.value = JSON.stringify(result.documents, null, 2);
+               
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        queryRag("constitution"); 
+    </script>
+</body>
+</html>
