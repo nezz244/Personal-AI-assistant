@@ -143,16 +143,16 @@
         <div class="input-pair">
             <div class="input-group">
                 <label for="topp">Top P:</label>
-                <input type="number" id="topp" placeholder="Enter top p...">
+                <input type="number" id="topp" placeholder="Enter top p..." max="2">
             </div>
             <div class="input-group">
                 <label for="max-tokens">Max Tokens:</label>
-                <input type="number" id="maxTokens" placeholder="Enter max tokens...">
+                <input type="number" id="maxTokens" placeholder="Enter max tokens..." max="4096">
             </div>
         </div>
         <div class="input-pair">
             <div class="input-group">
-                <label for="relevance">Max relevance</label>
+                <label for="relevance"> Enter Max relevance for returned document</label>
                 <input type="number" id="relevance" placeholder="Enter relevance...">
             </div>
         </div>
@@ -161,6 +161,44 @@
         </div>
     </div>
     <script>
+
+        document.addEventListener("DOMContentLoaded", function() {
+        setInitialValues();
+        loadSampleText();
+
+        // input validation
+        document.getElementById("topp").addEventListener("input", function() {
+            const toppInput = parseFloat(this.value);
+            const maxTopp = 2;
+            if (toppInput > maxTopp) {
+                this.value = maxTopp;
+            }
+        });
+
+        document.getElementById("temp").addEventListener("input", function() {
+            const tempInput = parseFloat(this.value);
+            const maxTopp = 3;
+            if (tempInput > maxTopp) {
+                this.value = maxTopp;
+            }
+        });
+
+        document.getElementById("topk").addEventListener("input", function() {
+            const topkInput = parseFloat(this.value);
+            const maxTopp = 10;
+            if (topkInput > maxTopp) {
+                this.value = maxTopp;
+            }
+        });
+
+        document.getElementById("maxTokens").addEventListener("input", function() {
+            const maxTokensInput = parseInt(this.value);
+            const maxMaxTokens = 4096;
+            if (maxTokensInput > maxMaxTokens) {
+                this.value = maxMaxTokens;
+            }
+        });
+        });
         function setInitialValues() {
             const promptt = localStorage.getItem("promptt") || "You are a decision engine, based on the user input decide which action to take.";
             const context = localStorage.getItem("context") || "";
