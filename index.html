@@ -17,13 +17,19 @@
             background-color: #f9f9f9;
         }
         .container {
-            height:600px;
+            height: 80vh; /* Or any dynamic height you prefer */
             width: 400px;
             padding: 20px;
-            overflow-y: auto;
+            overflow-y: scroll; /* Ensure overflow is scrollable */
             background-color: #fff;
             border-radius: 15px;
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            scrollbar-width: none; /* Hide scrollbar for Firefox */
+            -ms-overflow-style: none; /* IE and Edge */
+        }
+        /* Hide scrollbar for WebKit browsers */
+        .container::-webkit-scrollbar {
+            display: none;
         }
         .container h1 {
             font-size: 24px;
@@ -47,7 +53,7 @@
             margin-bottom: 15px;
         }
         .input-group {
-            margin-bottom: 20px;
+            margin-bottom: 0px;
         }
         .input-group label {
             display: block;
@@ -61,28 +67,43 @@
             border: 1px solid #ccc;
             border-radius: 5px;
             box-sizing: border-box;
+            gap: 20px;
         }
         .input-pair {
             display: flex;
             justify-content: space-between;
-            gap: 20px;
+            gap: 10px;
+            margin-top: 10px;
         }
         .input-pair .input-group {
             flex: 1;
+        }
+        .button-group {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
+            gap: 10px;
         }
         button {
             width: 100%;
             padding: 12px 20px;
             border: none;
             border-radius: 5px;
-            background-color: #007bff;
-            color: #fff;
             font-size: 18px;
             cursor: pointer;
             transition: background-color 0.3s ease;
         }
-        button:hover {
+        #talkToModelButton {
             background-color: #0056b3;
+        }
+        #editRagButton {
+            background-color: #ff1c1c;
+        }
+        #editRagButton:hover {
+            background-color: #990606;
+        }
+        #talkToModelButton:hover {
+            background-color: #02356b;
         }
     </style>
 </head>
@@ -96,7 +117,6 @@
             <option value="Goku">Goku</option>
             <option value="Vegeta">Vegeta</option>
         </select>
-
         <label for="modelSelect">Select model</label>
         <select id="modelSelect">
             <option value="model1">Phi3Mini</option>
@@ -104,11 +124,11 @@
         </select>
         <div class="input-group">
             <label for="prompt">System prompt</label>
-            <textarea id="prompt" rows="2" placeholder="Enter prompt template..."></textarea>
+            <textarea id="prompt" rows="10" placeholder="Enter prompt template..."></textarea>
         </div>
         <div class="input-group">
             <label for="context">Fact sheet</label>
-            <textarea id="context" rows="2" placeholder="Enter context..."></textarea>
+            <textarea id="context" rows="4" placeholder="Enter context..."></textarea>
         </div>
         <div class="input-pair">
             <div class="input-group">
@@ -130,9 +150,16 @@
                 <input type="number" id="maxTokens" placeholder="Enter max tokens...">
             </div>
         </div>
-        <button id="talkToModelButton">Save</button>
+        <div class="input-pair">
+            <div class="input-group">
+                <label for="relevance">Max relevance</label>
+                <input type="number" id="relevance" placeholder="Enter relevance...">
+            </div>
+        </div>
+        <div class="button-group">
+            <button id="talkToModelButton">Save</button>
+        </div>
     </div>
-
     <script>
         function setInitialValues() {
             const promptt = localStorage.getItem("promptt") || "You are a decision engine, based on the user input decide which action to take.";
@@ -141,22 +168,27 @@
             const topk = localStorage.getItem("topk") || "5";
             const topp = localStorage.getItem("topp") || "0.95";
             const maxTokens = localStorage.getItem("maxTokens") || "200";
-
+            const relevance = localStorage.getItem("relevance") || "12";
             document.getElementById("prompt").value = promptt;
             document.getElementById("context").value = context;
             document.getElementById("temp").value = temp;
             document.getElementById("topk").value = topk;
             document.getElementById("topp").value = topp;
             document.getElementById("maxTokens").value = maxTokens;
+            document.getElementById("relevance").value = relevance;
         }
-
-
         function loadSampleText() {
         document.getElementById("talkToModelButton").addEventListener("click", function() {
             const modelSelect = document.getElementById("modelSelect").value;
             const messages = localStorage.getItem("messages");
             const modelMessageHistory = localStorage.getItem("modelMessageHistory");
             const keyValueHistory = localStorage.getItem("keyValueHistory");
+            localStorage.setItem("maxTokens",document.getElementById("maxTokens").value);
+            localStorage.setItem("topp",document.getElementById("topp").value);
+            localStorage.setItem("topk",document.getElementById("topk").value);
+            localStorage.setItem("temp",document.getElementById("temp").value);
+            localStorage.setItem("relevance",document.getElementById("relevance").value);
+            localStorage.setItem("context",document.getElementById("context").value);
 
             const queryParams = new URLSearchParams({
                 model: modelSelect,
@@ -164,11 +196,9 @@
                 modelMessageHistory: modelMessageHistory,
                 keyValueHistory: keyValueHistory
             });
-
             window.location.href = "chat.html?" + queryParams.toString();
         });
           }
-
         function submitData() {
             const promptt = document.getElementById("prompt").value;
             const context = document.getElementById("context").value;
@@ -176,22 +206,20 @@
             const topk = document.getElementById("topk").value;
             const topp = document.getElementById("topp").value;
             const maxTokens = document.getElementById("maxTokens").value;
-
+            const relevance = document.getElementById("relevance").value;
             localStorage.setItem("promptt", promptt);
             localStorage.setItem("context", context);
             localStorage.setItem("temp", temp);
             localStorage.setItem("topk", topk);
             localStorage.setItem("topp", topp);
             localStorage.setItem("maxTokens", maxTokens);
+            localStorage.setItem("relevance", relevance);
             console.log(localStorage.getItem("messages"))
-            
             localStorage.setItem("messages", localStorage.getItem("messages"));
             localStorage.setItem("modelmessageHistory", localStorage.getItem("modelmessageHistory"));
             localStorage.setItem("keyValueHistory", localStorage.getItem("keyValueHistory"));
             localStorage.setItem("userCreatedCharacters", localStorage.getItem("userCreatedCharacters"));
-        
         }
-
         document.addEventListener("DOMContentLoaded", function() {
             setInitialValues();
             loadSampleText();
